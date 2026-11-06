@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { LoginPage } from "../../pages/LoginPage";
 import { HomePage } from "../../pages/HomePage";
-import { testBase, CommonUI } from "../../utilities/docuport-ui-utilities";
-import { exec } from "node:child_process";
+import { testBase, CommonUI, testLoggedIn } from "../../utilities/docuport-ui-utilities";
+import { appInfo } from "../../utilities/beta-data-reader";
 
 test( "Test 1 - Login with hard coded values without POM", { tag: "@test1" },  async ({ page }) => {
     await page.goto("https://beta.docuport.app/login");
@@ -135,3 +135,58 @@ testBase("Test 8 - Client left menu validation", {tag: "@test8"}, async ({ page 
 //     },
 //   );
 // }
+
+testLoggedIn("Test 9 - Client starts already logged in", {tag: "@test9"}, async ({ loggedInPage }) => {
+
+  const homePage = new HomePage(loggedInPage);
+  await loggedInPage.waitForTimeout(2000); 
+});
+
+//////////////////////////////////////////////////////////////////
+
+testLoggedIn.describe("Advisor role related tests", () => {
+    testLoggedIn.use({role: "advisor"});
+
+    testLoggedIn("Test 10 - Advisor starts already logged in .....", {tag: "@test10"}, async({loggedInPage}) => {
+        const homePage = new HomePage(loggedInPage);
+        await expect(homePage.profileIconButton).toBeVisible();
+    });
+
+    testLoggedIn("Test 11 - Advisor starts already logged in .....", {tag: "@test11"}, async({loggedInPage}) => {
+        const homePage = new HomePage(loggedInPage);
+        await homePage.validatePageFor("advisor");
+        await loggedInPage.waitForTimeout(2000); 
+    });
+
+});
+
+/*
+      username | password | message
+ */
+
+const invalidLogins = [
+  {username: "invalid@gmail.com", password: "invalid123!", message: "Username or password is incorrect"          },
+  {username: ""                 , password: "invalid123!", message: "Please enter your username or email address"},
+  {username: "invalid@gmail.com", password: ""           , message: "Please enter your password"                 },
+  {username: ""                 , password: ""           , message: "Please enter your username or email address"}
+];
+
+for (const eachRow of invalidLogins) {
+
+  testBase(`Test 12 - Login for wrong ${eachRow.username} and ${eachRow.password}`, {tag: "@test12"}, async({ page }) => {
+      const loginPage = new LoginPage(page);
+      await loginPage.login(eachRow.username, eachRow.password);  
+      await loginPage.verifyInvalidLoginMessage(eachRow.message);
+  });      
+  
+}
+
+for (const eachRow of appInfo.invalidLogins) {
+
+  testBase(`Test 13 - Login for wrong ${eachRow.username} and ${eachRow.password}`, {tag: "@test12"}, async({ page }) => {
+      const loginPage = new LoginPage(page);
+      await loginPage.login(eachRow.username, eachRow.password);  
+      await loginPage.verifyInvalidLoginMessage(eachRow.message);
+  });      
+  
+}

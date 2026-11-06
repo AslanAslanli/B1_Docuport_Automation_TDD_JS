@@ -14,6 +14,16 @@ export const testBase = base.extend({                       // OUR testBase = Pl
   },
 });
 
+export const testLoggedIn = testBase.extend({
+  role: ["client", {option: true}],
+
+  loggedInPage: async({page, role}, use) => {
+    await CommonUI.loginAs(page, role);
+    await use(page);
+  }
+
+});
+
 export { expect };
 
 // REUSABLE METHODS — used by many tests
@@ -22,8 +32,7 @@ export class CommonUI {
   // Log in as any role and land on Home
   static async loginAs(page, role = "client") {
     await new LoginPage(page).loginAs(role);
-    await new HomePage(page)
-      .validatePageFor(role);
+    await new HomePage(page).validatePageFor(role);
   }
 
   // Profile icon → Log out
@@ -41,15 +50,15 @@ export class CommonUI {
 
 // Screenshot only if the test failed
 async function takeScreenshotIfFailed(page, testInfo) {
-  if (testInfo.status !== "failed") return;
+  if (testInfo.status !== "failed") {
+    return;
+  }
 
   const dir = path.join("screenshots");
   fs.mkdirSync(dir, { recursive: true });
 
-  const time = new Date().toISOString()
-    .replace(/[:T.]/g, "_").slice(0, -5);
-  const safeTitle =
-    testInfo.title.replace(/\s+/g, "_");
+  const time = new Date().toISOString().replace(/[:T.]/g, "_").slice(0, -5);
+  const safeTitle = testInfo.title.replace(/\s+/g, "_");
   const name = `${safeTitle}_failed_${time}.png`;
 
   await page.screenshot({

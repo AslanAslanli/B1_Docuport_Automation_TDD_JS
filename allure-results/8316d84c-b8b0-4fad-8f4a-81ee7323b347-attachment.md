@@ -1,0 +1,93 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: login\login-describe.spec.js >> Login - describe - beforeEach >> Advisor login
+- Location: tests\login\login-describe.spec.js:22:11
+
+# Error details
+
+```
+Error: page.goto: SSL peer certificate or SSH remote key was not OK
+Call log:
+  - navigating to "https://beta.docuport.app/", waiting until "load"
+
+```
+
+# Test source
+
+```ts
+  1  | import { test as base, expect } from "@playwright/test";    // Playwright's test (renamed base) + expect
+  2  | import path from "path";                                    // build file paths — screenshots folder
+  3  | import fs from "fs";                                        // create that folder on disk
+  4  | import { appInfo } from "./beta-data-reader.js";            // data from beta_data.json
+  5  | import { LoginPage } from "../pages/LoginPage.js";          // used by CommonUI (next slide)
+  6  | import { HomePage } from "../pages/HomePage.js";            // used by CommonUI (next slide)
+  7  | 
+  8  | export const testBase = base.extend({                       // OUR testBase = Playwright's test + extras
+  9  |   page: async ({ page }, use, testInfo) => {                 // replace the built-in page
+> 10 |     await page.goto(process.env.DOCUPORT_BASE_URL);         // ① BEFORE — open Docuport (.env.beta)
+     |                ^ Error: page.goto: SSL peer certificate or SSH remote key was not OK
+  11 |     await expect(page).toHaveTitle(appInfo.loginPageTitle); // ① check the title is "Docuport"
+  12 |     await use(page);                                        // ② the test itself runs here
+  13 |     await takeScreenshotIfFailed(page, testInfo);           // ③ AFTER — screenshot if it failed
+  14 |   },
+  15 | });
+  16 | 
+  17 | export const testLoggedIn = testBase.extend({
+  18 |   role: ["client", {option: true}],
+  19 | 
+  20 |   loggedInPage: async({page, role}, use) => {
+  21 |     await CommonUI.loginAs(page, role);
+  22 |     await use(page);
+  23 |   }
+  24 | 
+  25 | });
+  26 | 
+  27 | export { expect };
+  28 | 
+  29 | // REUSABLE METHODS — used by many tests
+  30 | export class CommonUI {
+  31 | 
+  32 |   // Log in as any role and land on Home
+  33 |   static async loginAs(page, role = "client") {
+  34 |     await new LoginPage(page).loginAs(role);
+  35 |     await new HomePage(page).validatePageFor(role);
+  36 |   }
+  37 | 
+  38 |   // Profile icon → Log out
+  39 |   static async logout(page) {
+  40 |     await new HomePage(page).profileIconButton.click();
+  41 |     await page.getByText("Log out").click();
+  42 |     await new LoginPage(page).verifyLoginPageIsOpen();
+  43 |   }
+  44 | 
+  45 |   // Expected left menu for a role, from beta_data.json
+  46 |   static getLeftMenuFor(role) {
+  47 |     return appInfo.leftMenu[role];
+  48 |   }
+  49 | }
+  50 | 
+  51 | // Screenshot only if the test failed
+  52 | async function takeScreenshotIfFailed(page, testInfo) {
+  53 |   if (testInfo.status !== "failed") {
+  54 |     return;
+  55 |   }
+  56 | 
+  57 |   const dir = path.join("screenshots");
+  58 |   fs.mkdirSync(dir, { recursive: true });
+  59 | 
+  60 |   const time = new Date().toISOString().replace(/[:T.]/g, "_").slice(0, -5);
+  61 |   const safeTitle = testInfo.title.replace(/\s+/g, "_");
+  62 |   const name = `${safeTitle}_failed_${time}.png`;
+  63 | 
+  64 |   await page.screenshot({
+  65 |     path: path.join(dir, name),
+  66 |     fullPage: true,
+  67 |   });
+  68 | }
+```
