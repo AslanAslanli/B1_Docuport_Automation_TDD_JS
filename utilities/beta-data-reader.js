@@ -10,18 +10,20 @@ class AppInfo {
      * @param {string[]} data.roles
      * @param {Object<string, string[]>} data.leftMenu - menu per role
      */
-    constructor({ appName, baseUrl, loginPageTitle, roles, leftMenu }) {
+    constructor({ appName, baseUrl, loginPageTitle, roles, leftMenu, invalidLogins }) {
         this.appName = appName;
         this.baseUrl = baseUrl;
         this.loginPageTitle = loginPageTitle;
         this.roles = roles;
         this.leftMenu = leftMenu;
+        this.invalidLogins = invalidLogins;
     }
 }
 
 /** @type {AppInfo} */
+const ENV = process.env.TEST_ENV || "beta";
 export const appInfo = new AppInfo(
-    JSON.parse(readFileSync("./data/beta_data.json", "utf8"))
+    JSON.parse(readFileSync(`./data/${ENV}_data.json`, "utf8"))
 );
 
 /*

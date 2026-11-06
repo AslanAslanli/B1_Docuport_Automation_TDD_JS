@@ -94,5 +94,9 @@ export class LoginPage extends BasePage {
         await expect (this.usernameInputBox).toBeVisible();
     }
 
+    async verifyInvalidLoginMessage(message){
+        await expect(this.page.getByText(message)).toBeVisible();
+    }
+
 
 }
